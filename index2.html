@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>3D Model Viewer</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  </head>
+  <body style="margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh;">
+    <model-viewer
+      src="https://Rudra-Pratap-Singh1331.github.io/ARmodels/model/iphone_16_pro_max.glb"
+      alt="3D Shirt"
+      auto-rotate
+      camera-controls
+      ar
+      style="width: 90%; height: 500px;"
+    ></model-viewer>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+////add product 
+import React, { useState } from "react";
+import axios from "axios";
+import { Mic } from "lucide-react";
+import { Toaster, toast } from "react-hot-toast";
+
+const Addproduct = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    imgurl: "",
+    price: "",
+    quantity: "",
+    costprice: "",
+    description: "",
+    category: "", 
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const result = await axios.post(
+        "http://localhost:5000/api/product/addProduct",
+        formData,
+        { withCredentials: true }
+      );
+      toast.success("Product added!");
+      setFormData({
+        name: "",
+        imgurl: "",
+        price: "",
+        quantity: "",
+        costprice: "",
+        description: "",
+        category:""
+      });
+      console.log(result)
+    } catch (error) {
+      console.error("Error adding product:", error.message);
+      toast.error("Failed to add product.");
+    }
+  };
+
+  const handleFillWithAI = () => {
+    const recognition =
+      new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      toast.loading("Processing with AI...");
+
+      try {
+        const res = await fetch("http://localhost:5000/api/ai/fill-product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: transcript }),
+        });
+
+        const data = await res.json();
+        toast.dismiss();
+
+        if (!data.output || typeof data.output !== "object") {
+          toast.error("Invalid AI response format.");
+          return;
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          ...data.output,
+        }));
+        console.log(data.output)
+
+        toast.success("Form filled with AI!");
+      } catch (err) {
+        toast.dismiss();
+        toast.error("AI fill error: " + err.message);
+        console.error("AI fill error:", err.message);
+      }
+    };
+
+    recognition.onerror = (e) => {
+      toast.error("Speech recognition error.");
+      console.error("Speech error:", e);
+    };
+
+    recognition.start();
+  };
+
+  return (
+    <div className="max-w-lg mx-auto mt-8 bg-white p-4 rounded-xl shadow-md">
+      <Toaster />
+      <h2 className="text-xl font-semibold text-[#0071dc] text-center mb-4">
+        Add New Product
+      </h2>
+
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={handleFillWithAI}
+          className="flex items-center gap-2 text-sm bg-[#0071dc] text-white px-3 py-1.5 rounded hover:bg-[#0071dc] transition"
+        >
+          <Mic size={16} /> Fill with AI
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-0.2">
+        <div>
+          <label className="block text-[#0071dc] text-sm font-medium mb-1">Product Name</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            className="w-full border border-blue-300 rounded-lg px-3 py-1.5"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[#0071dc] text-sm font-medium mb-1">Image URL</label>
+          <input
+            type="url"
+            name="imgurl"
+            value={formData.imgurl}
+            onChange={handleChange}
+            required
+            className="w-full border border-blue-300 rounded-lg px-3 py-1.5"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[#0071dc] text-sm font-medium mb-1">Price (₹)</label>
+          <input
+            type="number"
+            name="price"
+            value={formData.price}
+            onChange={handleChange}
+            required
+            className="w-full border border-blue-300 rounded-lg px-3 py-1.5"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[#0071dc] text-sm font-medium mb-1">Quantity</label>
+          <input
+            type="number"
+            name="quantity"
+            value={formData.quantity}
+            onChange={handleChange}
+            required
+            className="w-full border border-blue-300 rounded-lg px-3 py-1.5"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[#0071dc] text-sm font-medium mb-1">Cost Price</label>
+          <input
+            type="number"
+            name="costprice"
+            value={formData.costprice}
+            onChange={handleChange}
+            required
+            className="w-full border border-blue-300 rounded-lg px-3 py-1.5"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[#0071dc] text-sm font-medium mb-1">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+            rows="2"
+            className="w-full border border-blue-300 rounded-lg px-3 py-1.5 resize-none"
+          />
+        </div>
+        <label className="block text-sm  text-[#0071dc] font-medium mb-1">Category</label>
+      <select
+         name="category"
+          value={formData.category}
+          onChange={handleChange}
+         className="w-full px-4 py-2 rounded border text-[#0071dc] border-blue-300 mb-4"
+           required
+        >
+  <option value="">Select Category</option>
+  <option value="shoes">Shoes</option>
+  <option value="furniture">Furniture</option>
+  <option value="mobile">Mobile</option>
+  <option value="electronics">Laptop</option>
+  <option value="grocery">Grocery</option>
+</select>
+        <div className="text-center">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white text-sm font-medium px-5 py-1.5 rounded-lg hover:bg-blue-700 transition"
+          >
+            Add Product
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default Addproduct;
+
+
